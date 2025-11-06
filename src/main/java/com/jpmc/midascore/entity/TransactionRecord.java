@@ -20,14 +20,18 @@ public class TransactionRecord {
     @Column(nullable = false)
     private float amount;
 
+    @Column(nullable = false)
+    private float incentive;
+
     protected TransactionRecord() {
         // Required by JPA
     }
 
-    public TransactionRecord(UserRecord sender, UserRecord recipient, float amount) {
+    public TransactionRecord(UserRecord sender, UserRecord recipient, float amount, float incentive) {
         this.sender = sender;
         this.recipient = recipient;
         this.amount = amount;
+        this.incentive = incentive;
     }
 
     public Long getId() {
@@ -58,12 +62,21 @@ public class TransactionRecord {
         this.amount = amount;
     }
 
+    public float getIncentive() {
+        return incentive;
+    }
+
+    public void setIncentive(float incentive) {
+        this.incentive = incentive;
+    }
+
     @Override
     public String toString() {
-        return String.format("TransactionRecord[id=%d, sender=%d, recipient=%d, amount=%.2f]",
+        return String.format("TransactionRecord[id=%d, sender=%d, recipient=%d, amount=%.2f, incentive=%.2f]",
                 id,
                 sender != null ? sender.getId() : null,
                 recipient != null ? recipient.getId() : null,
-                amount);
+                amount,
+                incentive);
     }
 }

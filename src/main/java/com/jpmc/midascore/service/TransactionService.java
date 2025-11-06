@@ -17,10 +17,14 @@ public class TransactionService {
 
     private final UserRepository userRepository;
     private final TransactionRepository transactionRepository;
+    private final IncentiveService incentiveService;
 
-    public TransactionService(UserRepository userRepository, TransactionRepository transactionRepository) {
+    public TransactionService(UserRepository userRepository,
+                              TransactionRepository transactionRepository,
+                              IncentiveService incentiveService) {
         this.userRepository = userRepository;
         this.transactionRepository = transactionRepository;
+        this.incentiveService = incentiveService;
     }
 
     @Transactional
@@ -48,22 +52,29 @@ public class TransactionService {
             return;
         }
 
-        // All validations passed - process the transaction
-        logger.info("Transaction valid - processing: {} -> {} amount: {}",
-                transaction.getSenderId(), transaction.getRecipientId(), transaction.getAmount());
+        // All validations passed - get incentive from API
+        float incentive = incentiveService.getIncentive(transaction);
+        logger.info("Transaction valid - processing: {} -> {} amount: {} incentive: {}",
+                transaction.getSenderId(), transaction.getRecipientId(),
+                transaction.getAmount(), incentive);
 
-        // Step 6 & 7: Update sender balance (deduct)
+        // Update sender balance (deduct transaction amount only)
         sender.setBalance(sender.getBalance() - transaction.getAmount());
 
-        // Step 8: Update recipient balance (add)
-        recipient.setBalance(recipient.getBalance() + transaction.getAmount());
+        // Update recipient balance (add transaction amount + incentive)
+        recipient.setBalance(recipient.getBalance() + transaction.getAmount() + incentive);
 
-        // Step 9 & 10: Save updated user records
+        // Save updated user records
         userRepository.save(sender);
         userRepository.save(recipient);
 
-        // Step 11, 12 & 13: Create and save transaction record
-        TransactionRecord transactionRecord = new TransactionRecord(sender, recipient, transaction.getAmount());
+        // Create and save transaction record with incentive
+        TransactionRecord transactionRecord = new TransactionRecord(
+                sender,
+                recipient,
+                transaction.getAmount(),
+                incentive
+        );
         transactionRepository.save(transactionRecord);
 
         logger.info("Transaction processed successfully: {}", transactionRecord);
